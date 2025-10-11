@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Zomato-like Food Ordering</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&family=Roboto&display=swap" rel="stylesheet" />
+    <style>
+        /* Reset and base styles */
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            font-family: 'Poppins', 'Roboto', sans-serif;
+            background-color: #fff;
+            color: #222;
+        }
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+        /* Navigation Bar */
+        header {
+            background-color: #E23744;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .logo {
+            font-weight: 700;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+        }
+        nav a {
+            margin-left: 25px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: color 0.3s ease;
+        }
+        nav a:hover {
+            color: #fff9f9;
+            text-decoration: underline;
+        }
+        /* Hero Banner */
+        .hero {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            padding: 40px 30px;
+            background: linear-gradient(135deg, #E23744 0%, #b72a36 100%);
+            color: white;
+            border-radius: 0 0 30px 30px;
+            box-shadow: 0 8px 20px rgba(226, 55, 68, 0.5);
+        }
+        .hero-text {
+            flex: 1 1 400px;
+            max-width: 600px;
+        }
+        .hero-text h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+        .hero-text p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+        .hero-image {
+            flex: 1 1 300px;
+            max-width: 400px;
+            text-align: center;
+        }
+        .hero-image img {
+            max-width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        /* Main Content */
+        main {
+            display: flex;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 30px;
+            gap: 30px;
+        }
+        /* Menu Section */
+        .menu-section {
+            flex: 3;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 25px;
+        }
+        .food-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+        .food-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .food-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+        .food-content {
+            padding: 15px 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .food-name {
+            font-weight: 700;
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+            color: #E23744;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .food-price {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .rating {
+            color: #FFD700;
+            margin-bottom: 15px;
+        }
+        .add-to-cart-btn {
+            background-color: #E23744;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 25px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            align-self: flex-start;
+        }
+        .add-to-cart-btn:hover {
+            background-color: #b72a36;
+        }
+        /* Offers Banner */
+        .offers-banner {
+            background: linear-gradient(90deg, #ff6a00, #ee0979);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(255, 106, 0, 0.6);
+        }
+        /* Order Summary Sidebar */
+        .order-summary {
+            flex: 1;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 20px;
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+        }
+        .order-summary h3 {
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #E23744;
+        }
+        .order-total {
+            font-weight: 700;
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+        }
+        .checkout-btn {
+            background-color: #E23744;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-weight: 700;
+            width: 100%;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .checkout-btn:hover {
+            background-color: #b72a36;
+        }
+        /* Responsive */
+        @media (max-width: 900px) {
+            main {
+                flex-direction: column;
+                padding: 0 15px;
+            }
+            .order-summary {
+                position: static;
+                margin-top: 30px;
+                top: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="logo">Zomato-like</a>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/menu">Menu</a>
+            <a href="/contact">Contact</a>
+            <a href="/cart">Orders</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="hero-text">
+            <h1>Order Delicious Food Online</h1>
+            <p>Experience fast delivery and mouth-watering dishes from your favorite restaurants.</p>
+        </div>
+        <div class="hero-image">
+            <img src="https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=800&q=80" alt="Food Delivery" />
+        </div>
+    </section>
+
+    <main>
+        <div class="menu-section" id="menu-section">
+            <div class="offers-banner">Get 20% OFF today 🍲</div>
+            <!-- Dynamic menu items will be loaded here -->
+        </div>
+
+        <aside class="order-summary" id="order-summary">
+            <h3>Order Summary</h3>
+        <div id="cart-items"></div>
+        <div class="order-total" id="order-total">Total: ₹0</div>
+        <div id="user-details-section" style="display: none; margin-top: 15px;">
+            <label for="first-name">First Name:</label>
+            <input type="text" id="first-name" placeholder="Enter first name" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px; box-sizing: border-box;">
+            <label for="last-name">Last Name:</label>
+            <input type="text" id="last-name" placeholder="Enter last name" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px; box-sizing: border-box;">
+            <label for="email">Email:</label>
+            <input type="email" id="email" placeholder="Enter email" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px; box-sizing: border-box;">
+            <label for="phone">Phone Number:</label>
+            <input type="tel" id="phone" placeholder="Enter phone number" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px; box-sizing: border-box;">
+        </div>
+        <div id="address-section" style="display: none; margin-top: 15px;">
+            <label for="delivery-address">Delivery Address:</label>
+            <input type="text" id="delivery-address" placeholder="Enter your delivery address" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; margin-top: 5px;">
+        </div>
+        <button class="checkout-btn" id="checkout-btn" style="display: none;">Proceed to Checkout</button>
+        </aside>
+    </main>
+
+    <script>
+        let cart = [];
+        let menuData = [];
+
+        // Fetch menu data from backend
+        async function loadMenu() {
+            try {
+                const response = await fetch('/api/menu');
+                const data = await response.json();
+                menuData = data.sections;
+                renderMenu();
+            } catch (error) {
+                console.error('Error loading menu:', error);
+            }
+        }
+
+        function renderMenu() {
+            const menuSection = document.getElementById('menu-section');
+            let html = '<div class="offers-banner">Get 20% OFF today 🍲</div>';
+
+            menuData.forEach(section => {
+                html += `<h3 style="grid-column: 1 / -1; text-align: center; color: #E23744; margin: 20px 0;">${section.labels[0].displayName}</h3>`;
+                section.items.forEach(item => {
+                    const itemName = item.labels[0].displayName;
+                    const price = item.attributes.price.units;
+                    const veg = item.attributes.veg ? '⭐️⭐️⭐️⭐️⭐️' : '⭐️⭐️⭐️⭐️';
+                    const imageUrl = item.mediaKeys ? `https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=400&q=80` : ''; // Placeholder image
+                    html += `
+                        <div class="food-card">
+                            <img class="food-image" src="${imageUrl}" alt="${itemName}" />
+                            <div class="food-content">
+                                <div class="food-name">${itemName} ${veg}</div>
+                                <div class="food-price">₹${price}</div>
+                                <button class="add-to-cart-btn" onclick="addToCart('${itemName}', ${price})">Add to Cart</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+
+            menuSection.innerHTML = html;
+        }
+
+        function addToCart(name, price) {
+            const existingItem = cart.find(item => item.name === name);
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({ name, quantity: 1, price: parseInt(price) });
+            }
+            updateCart();
+        }
+
+        function updateCart() {
+            const cartItems = document.getElementById('cart-items');
+            const orderTotal = document.getElementById('order-total');
+            const userSection = document.getElementById('user-details-section');
+            const addressSection = document.getElementById('address-section');
+            const checkoutBtn = document.getElementById('checkout-btn');
+
+            let total = 0;
+            let itemsHtml = '<h4>Cart Items:</h4>';
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+                itemsHtml += `<p>${item.name} x${item.quantity} - ₹${itemTotal}</p>`;
+            });
+
+            if (cart.length === 0) {
+                itemsHtml = '<p>Your cart is empty.</p>';
+                userSection.style.display = 'none';
+                addressSection.style.display = 'none';
+                checkoutBtn.style.display = 'none';
+            } else {
+                itemsHtml += `<hr>`;
+                orderTotal.textContent = `Total: ₹${total}`;
+                userSection.style.display = 'block';
+                addressSection.style.display = 'block';
+                checkoutBtn.style.display = 'block';
+            }
+
+            cartItems.innerHTML = itemsHtml;
+        }
+
+        async function placeOrder() {
+            const firstName = document.getElementById('first-name').value.trim();
+            const lastName = document.getElementById('last-name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const address = document.getElementById('delivery-address').value.trim();
+
+            if (cart.length === 0) {
+                alert('Cart is empty.');
+                return;
+            }
+            if (!firstName || !lastName || !email || !phone || !address) {
+                alert('Please fill all user details and address.');
+                return;
+            }
+            if (!email.includes('@')) {
+                alert('Please enter a valid email.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/place_order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        first_name: firstName,
+                        last_name: lastName,
+                        email: email,
+                        phone: phone,
+                        cart: cart.map(item => ({ name: item.name, quantity: item.quantity })),
+                        address: address
+                    })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    alert(result.message);
+                    cart = [];
+                    updateCart();
+                    // Clear fields
+                    document.getElementById('first-name').value = '';
+                    document.getElementById('last-name').value = '';
+                    document.getElementById('email').value = '';
+                    document.getElementById('phone').value = '';
+                    document.getElementById('delivery-address').value = '';
+                } else {
+                    alert(result.error);
+                }
+            } catch (error) {
+                alert('Error placing order: ' + error);
+            }
+        }
+
+        // Event listeners
+        document.getElementById('checkout-btn').addEventListener('click', placeOrder);
+
+        // Load menu on page load
+        loadMenu();
+    </script>
+</body>
+</html>

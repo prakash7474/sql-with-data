@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Zomato-like Food Delivery</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&family=Roboto&display=swap" rel="stylesheet" />
+    <style>
+        /* Reset and base */
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Poppins', 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #fff;
+            color: #222;
+            line-height: 1.6;
+        }
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+        img {
+            max-width: 100%;
+            display: block;
+            border-radius: 10px;
+        }
+
+        /* Navigation */
+        header {
+            background-color: #E23744;
+            color: white;
+            padding: 15px 30px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo {
+            font-weight: 900;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+            user-select: none;
+        }
+        nav {
+            display: flex;
+            gap: 25px;
+        }
+        nav a {
+            font-weight: 600;
+            font-size: 1rem;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+        nav a:hover {
+            background-color: rgba(255,255,255,0.2);
+        }
+
+        /* Main layout */
+        main {
+            display: flex;
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+            gap: 30px;
+        }
+
+        /* Left content */
+        .content {
+            flex: 1;
+        }
+
+        /* Hero banner */
+        .hero {
+            position: relative;
+            background: url('https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=1350&q=80') center center/cover no-repeat;
+            height: 300px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(226, 55, 68, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 900;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+            margin-bottom: 40px;
+        }
+
+        /* Menu section */
+        .menu-section {
+            margin-bottom: 40px;
+        }
+        .menu-section h2 {
+            color: #E23744;
+            font-weight: 900;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            user-select: none;
+        }
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 10px 25px rgba(226, 55, 68, 0.4);
+        }
+        .card img {
+            height: 180px;
+            object-fit: cover;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .card-body {
+            padding: 15px 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .dish-name {
+            font-weight: 700;
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+            color: #222;
+            user-select: none;
+        }
+        .price-rating {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .price {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #E23744;
+        }
+        .rating {
+            color: #FFD700;
+            font-size: 1.1rem;
+            user-select: none;
+        }
+        .add-to-cart-btn {
+            background-color: #E23744;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-weight: 700;
+            font-size: 1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(226, 55, 68, 0.6);
+            transition: background-color 0.3s ease;
+            user-select: none;
+        }
+        .add-to-cart-btn:hover {
+            background-color: #b72a36;
+        }
+
+        /* Featured offers banner */
+        .offers-banner {
+            background: linear-gradient(90deg, #E23744, #FF6F61);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-weight: 900;
+            font-size: 1.5rem;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(255, 111, 97, 0.6);
+            user-select: none;
+            margin-bottom: 40px;
+        }
+
+        /* Sticky order summary sidebar */
+        .order-summary {
+            width: 320px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+            padding: 25px 30px;
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+            user-select: none;
+        }
+        .order-summary h3 {
+            font-weight: 900;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #E23744;
+        }
+        .order-items {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #333;
+        }
+        .order-total {
+            font-weight: 900;
+            font-size: 1.3rem;
+            margin-bottom: 25px;
+            border-top: 2px solid #E23744;
+            padding-top: 15px;
+            color: #E23744;
+        }
+        .checkout-btn {
+            width: 100%;
+            background-color: #E23744;
+            color: white;
+            border: none;
+            padding: 15px 0;
+            font-weight: 900;
+            font-size: 1.2rem;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(226, 55, 68, 0.7);
+            transition: background-color 0.3s ease;
+        }
+        .checkout-btn:hover {
+            background-color: #b72a36;
+        }
+
+        /* Spiciness badges */
+        .spiciness {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .spiciness.low { background-color: #4CAF50; color: white; }
+        .spiciness.medium { background-color: #FF9800; color: white; }
+        .spiciness.high { background-color: #F44336; color: white; }
+        .spiciness.none { background-color: #9E9E9E; color: white; }
+
+        /* Veg/Non-Veg indicator */
+        .veg-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+        .veg { background-color: #4CAF50; }
+        .non-veg { background-color: #F44336; }
+
+        /* Quantity selector */
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .qty-btn {
+            background-color: #E23744;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: 700;
+        }
+        .qty-input {
+            width: 50px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 5px;
+        }
+
+        /* Modal for variations */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 500px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: black;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            main {
+                flex-direction: column;
+                max-width: 90%;
+            }
+            .order-summary {
+                width: 100%;
+                position: relative;
+                top: auto;
+                margin-top: 30px;
+            }
+        }
+        @media (max-width: 480px) {
+            .hero {
+                font-size: 1.8rem;
+                height: 220px;
+            }
+            nav {
+                gap: 15px;
+            }
+            nav a {
+                font-size: 0.9rem;
+                padding: 6px 10px;
+            }
+            .card-body {
+                padding: 12px 15px;
+            }
+            .dish-name {
+                font-size: 1.1rem;
+            }
+            .price-rating {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+            .price {
+                font-size: 1rem;
+            }
+            .rating {
+                font-size: 1rem;
+            }
+            .add-to-cart-btn {
+                font-size: 0.9rem;
+                padding: 8px 12px;
+            }
+            .quantity-selector {
+                gap: 5px;
+            }
+            .qty-btn {
+                width: 25px;
+                height: 25px;
+            }
+            .qty-input {
+                width: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="logo">FoodExpress</a>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/menu">Menu</a>
+            <a href="/contact">Contact</a>
+            <a href="/cart">Orders</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="content">
+            <div class="hero">
+                Welcome to FoodExpress
+            </div>
+
+            <div class="welcome-section">
+                <h2>Discover Delicious Food</h2>
+                <p>Order from your favorite restaurants and enjoy fast delivery right to your door.</p>
+                <a href="/menu" class="cta-button">View Menu</a>
+            </div>
+
+            <section class="offers-banner">
+                🔥 Featured Offers: Get 20% off on orders above ₹300! Use code: FOODIE20 🔥
+            </section>
+        </section>
+    </main>
+
+    <!-- Modal for item variations -->
+    <div id="variation-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3 id="modal-title">Customize Your Order</h3>
+            <div id="modal-body"></div>
+            <button class="add-to-cart-btn" onclick="addToCartWithVariations()">Add to Cart</button>
+        </div>
+    </div>
+
+    <script>
+        
+    </script>
+</body>
+</html>
