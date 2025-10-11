@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Music Discovery</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+            color: #FFFFFF;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background-color: #000000;
+            padding: 24px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1DB954;
+            padding: 0 24px 24px;
+        }
+
+        .sidebar nav {
+            list-style: none;
+        }
+
+        .sidebar nav li {
+            margin-bottom: 8px;
+        }
+
+        .sidebar nav a {
+            display: flex;
+            align-items: center;
+            padding: 12px 24px;
+            color: #B3B3B3;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
+            color: #FFFFFF;
+            background-color: #1DB954;
+        }
+
+        .sidebar nav a i {
+            margin-right: 16px;
+            font-size: 20px;
+        }
+
+        /* Main content */
+        .main-content {
+            flex: 1;
+            margin-left: 240px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background-color: #181818;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #282828;
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .search-input {
+            background-color: #282828;
+            border: 1px solid #404040;
+            border-radius: 25px;
+            padding: 8px 16px;
+            color: #FFFFFF;
+            font-size: 14px;
+            width: 100%;
+            outline: none;
+        }
+
+        .search-input::placeholder {
+            color: #B3B3B3;
+        }
+
+        .filters {
+            display: flex;
+            gap: 16px;
+            margin-left: 32px;
+        }
+
+        .filter-select {
+            background-color: #282828;
+            border: 1px solid #404040;
+            border-radius: 20px;
+            padding: 8px 16px;
+            color: #FFFFFF;
+            font-size: 14px;
+            outline: none;
+        }
+
+        /* Content */
+        .content {
+            padding: 32px;
+            flex: 1;
+        }
+
+        .section-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+
+        /* Track grid */
+        .track-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 24px;
+        }
+
+        .track-card {
+            background-color: #181818;
+            border-radius: 8px;
+            padding: 16px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid #282828;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .track-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(29, 185, 84, 0.3);
+            border-color: #1DB954;
+        }
+
+        .album-cover {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 4px;
+            object-fit: cover;
+            margin-bottom: 16px;
+        }
+
+        .track-info h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .track-info p {
+            font-size: 14px;
+            color: #B3B3B3;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .popularity-bar {
+            width: 100%;
+            height: 4px;
+            background-color: #404040;
+            border-radius: 2px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+
+        .popularity-fill {
+            height: 100%;
+            background-color: #1DB954;
+            border-radius: 2px;
+        }
+
+        .preview-btn {
+            width: 40px;
+            height: 40px;
+            background-color: #1DB954;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 0 auto;
+        }
+
+        .preview-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(29, 185, 84, 0.5);
+        }
+
+        .preview-btn i {
+            color: #000000;
+            font-size: 16px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 60px;
+            }
+
+            .sidebar .logo {
+                display: none;
+            }
+
+            .sidebar nav a span {
+                display: none;
+            }
+
+            .main-content {
+                margin-left: 60px;
+            }
+
+            .header {
+                padding: 16px 16px;
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .search-container {
+                max-width: none;
+            }
+
+            .filters {
+                margin-left: 0;
+                justify-content: center;
+            }
+
+            .content {
+                padding: 16px;
+            }
+
+            .track-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">Spotify</div>
+            <nav>
+                <li><a href="#" class="active"><i>🏠</i><span>Home</span></a></li>
+                <li><a href="#"><i>🎵</i><span>Tracks</span></a></li>
+                <li><a href="#"><i>👤</i><span>Artists</span></a></li>
+                <li><a href="#"><i>📂</i><span>Playlists</span></a></li>
+                <li><a href="#"><i>❤️</i><span>Favorites</span></a></li>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="search-container">
+                    <input type="text" class="search-input" placeholder="Search for songs, artists...">
+                </div>
+                <div class="filters">
+                    <select class="filter-select">
+                        <option>Sort by: Popularity</option>
+                        <option>Sort by: Release Date</option>
+                        <option>Sort by: Duration</option>
+                    </select>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <main class="content">
+                <h1 class="section-title">Discover New Music</h1>
+                <div class="track-grid">
+                    <!-- Sample Track Cards -->
+                    <div class="track-card">
+                        <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop" alt="Album Cover" class="album-cover">
+                        <div class="track-info">
+                            <h3>Blinding Lights</h3>
+                            <p>The Weeknd</p>
+                        </div>
+                        <div class="popularity-bar">
+                            <div class="popularity-fill" style="width: 95%;"></div>
+                        </div>
+                        <button class="preview-btn"><i>▶</i></button>
+                    </div>
+
+                    <div class="track-card">
+                        <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&h=300&fit=crop" alt="Album Cover" class="album-cover">
+                        <div class="track-info">
+                            <h3>Watermelon Sugar</h3>
+                            <p>Harry Styles</p>
+                        </div>
+                        <div class="popularity-bar">
+                            <div class="popularity-fill" style="width: 88%;"></div>
+                        </div>
+                        <button class="preview-btn"><i>▶</i></button>
+                    </div>
+
+                    <div class="track-card">
+                        <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop" alt="Album Cover" class="album-cover">
+                        <div class="track-info">
+                            <h3>Levitating</h3>
+                            <p>Dua Lipa</p>
+                        </div>
+                        <div class="popularity-bar">
+                            <div class="popularity-fill" style="width: 92%;"></div>
+                        </div>
+                        <button class="preview-btn"><i>▶</i></button>
+                    </div>
+
+                    <div class="track-card">
+                        <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&h=300&fit=crop" alt="Album Cover" class="album-cover">
+                        <div class="track-info">
+                            <h3>Good 4 U</h3>
+                            <p>Olivia Rodrigo</p>
+                        </div>
+                        <div class="popularity-bar">
+                            <div class="popularity-fill" style="width: 85%;"></div>
+                        </div>
+                        <button class="preview-btn"><i>▶</i></button>
+                    </div>
+
+                    <div class="track-card">
+                        <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop" alt="Album Cover" class="album-cover">
+                        <div class="track-info">
+                            <h3>Stay</h3>
+                            <p>The Kid Laroi & Justin Bieber</p>
+                        </div>
+                        <div class="popularity-bar">
+                            <div class="popularity-fill" style="width: 90%;"></div>
+                        </div>
+                        <button class="preview-btn"><i>▶</i></button>
+                    </div>
+
+                    <div class="track-card">
+                        <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&h=300&fit=crop" alt="Album Cover" class="album-cover">
+                        <div class="track-info">
+                            <h3>Peaches</h3>
+                            <p>Justin Bieber ft. Daniel Caesar & Giveon</p>
+                        </div>
+                        <div class="popularity-bar">
+                            <div class="popularity-fill" style="width: 87%;"></div>
+                        </div>
+                        <button class="preview-btn"><i>▶</i></button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
