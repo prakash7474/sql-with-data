@@ -4,13 +4,17 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import mysql.connector
 import re
 import json
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 # Spotify API setup
+# IMPORTANT: Replace these with your actual Spotify API credentials
+# Get them from: https://developer.spotify.com/dashboard
 sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
-    client_id='7ae955693f224b679fc0abaad6996b13',  # Replace with your Client ID
-    client_secret='a4b9348c27754ccb92abe396752c15c4'  # Replace with your Client Secret
+    client_id='3ca6426adfa44b62a0b063b2f0c3ef9c',  # Replace with your Client ID
+    client_secret='625101c788c142b28e21d98025a9bd6a'  # Replace with your Client Secret
 ))
 
 # MySQL Database Connection
@@ -125,39 +129,130 @@ def analyze_track():
     try:
         data = request.get_json()
         url = data.get('url')
+        source = data.get('source', 'api')  # 'api' for Spotify API, 'static' for CSV data
 
-        if not url:
-            return jsonify({"error": "URL is required"}), 400
+        if source == 'static':
+            # Analyze static CSV data
+            return analyze_static_track_data(data)
+        else:
+            # Analyze Spotify API data
+            if not url:
+                return jsonify({"error": "URL is required"}), 400
 
-        track_id = extract_spotify_id(url, 'track')
-        if not track_id:
-            return jsonify({"error": "Invalid Spotify track URL"}), 400
+            track_id = extract_spotify_id(url, 'track')
+            if not track_id:
+                return jsonify({"error": "Invalid Spotify track URL"}), 400
 
-        # Fetch track data
-        track = sp.track(track_id)
+            # Fetch track data
+            track = sp.track(track_id)
 
-        # Fetch audio features
-        audio_features = sp.audio_features([track_id])[0]
+            # Fetch audio features
+            audio_features = sp.audio_features([track_id])[0]
 
-        # Insert into database
-        insert_track(track, audio_features)
+            # Insert into database
+            insert_track(track, audio_features)
 
-        # Prepare response
+            # Prepare response
+            response = {
+                "id": track['id'],
+                "name": track['name'],
+                "artists": track['artists'],
+                "album": track['album'],
+                "popularity": track['popularity'],
+                "duration_ms": track['duration_ms'],
+                "external_urls": track['external_urls'],
+                "audio_features": audio_features
+            }
+
+            return jsonify(response)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+def analyze_static_track_data(data):
+    """Analyze static track data from CSV files"""
+    try:
+        import pandas as pd
+        import os
+
+        # Read static CSV files
+        track_data_path = os.path.join(os.getcwd(), 'track_data.csv')
+        spotify_track_data_path = os.path.join(os.getcwd(), 'spotify_track_data.csv')
+
+        tracks_data = []
+
+        # Read track_data.csv
+        if os.path.exists(track_data_path):
+            df1 = pd.read_csv(track_data_path)
+            for _, row in df1.iterrows():
+                tracks_data.append({
+                    "name": row['Track Name'],
+                    "artists": [{"name": row['Artist']}],
+                    "album": {"name": row['Album']},
+                    "popularity": int(row['Popularity']),
+                    "duration_ms": int(float(row['Duration (minutes)']) * 60000),  # Convert to ms
+                    "id": f"static_{len(tracks_data)}",
+                    "audio_features": None  # No audio features in static data
+                })
+
+        # Read spotify_track_data.csv
+        if os.path.exists(spotify_track_data_path):
+            df2 = pd.read_csv(spotify_track_data_path)
+            for _, row in df2.iterrows():
+                tracks_data.append({
+                    "name": row['Track Name'],
+                    "artists": [{"name": row['Artist']}],
+                    "album": {"name": row['Album']},
+                    "popularity": int(row['Popularity']),
+                    "duration_ms": int(float(row['Duration (minutes)']) * 60000),  # Convert to ms
+                    "id": f"static_{len(tracks_data)}",
+                    "audio_features": None  # No audio features in static data
+                })
+
+        # Insert static data into database
+        connection = create_connection()
+        cursor = connection.cursor()
+
+        for track_data in tracks_data:
+            # Get or create artist
+            artist_id = get_or_create_artist(track_data['artists'][0]['name'], cursor)
+
+            # Get or create album
+            album_id = get_or_create_album(track_data['album']['name'], artist_id, cursor)
+
+            # Insert track
+            cursor.execute("""
+                INSERT INTO tracks (name, artist_id, album_id, popularity, duration_ms, spotify_id)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE popularity = VALUES(popularity)
+            """, (
+                track_data['name'],
+                artist_id,
+                album_id,
+                track_data['popularity'],
+                track_data['duration_ms'],
+                track_data['id']
+            ))
+
+        connection.commit()
+
+        # Return analysis results
         response = {
-            "id": track['id'],
-            "name": track['name'],
-            "artists": track['artists'],
-            "album": track['album'],
-            "popularity": track['popularity'],
-            "duration_ms": track['duration_ms'],
-            "external_urls": track['external_urls'],
-            "audio_features": audio_features
+            "type": "static_analysis",
+            "total_tracks": len(tracks_data),
+            "tracks": tracks_data,
+            "message": f"Successfully analyzed {len(tracks_data)} tracks from static data"
         }
 
         return jsonify(response)
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"Error analyzing static data: {str(e)}"}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'connection' in locals():
+            connection.close()
 
 @app.route('/api/analyze-playlist', methods=['POST'])
 def analyze_playlist():
@@ -298,6 +393,84 @@ def get_stats():
         if connection:
             connection.close()
 
+@app.route('/api/update-tracks', methods=['POST'])
+def update_tracks():
+    connection = None
+    cursor = None
+    try:
+        connection = create_connection()
+        cursor = connection.cursor(dictionary=True)
+
+        # Get all tracks from database
+        cursor.execute("SELECT track_id, spotify_id FROM tracks")
+        tracks = cursor.fetchall()
+
+        updated_count = 0
+
+        for track in tracks:
+            try:
+                # Fetch latest track data from Spotify
+                track_data = sp.track(track['spotify_id'])
+
+                # Fetch latest audio features
+                audio_features = sp.audio_features([track['spotify_id']])[0]
+
+                # Update track information
+                cursor.execute("""
+                    UPDATE tracks
+                    SET popularity = %s, duration_ms = %s
+                    WHERE track_id = %s
+                """, (
+                    track_data['popularity'],
+                    track_data['duration_ms'],
+                    track['track_id']
+                ))
+
+                # Update audio features if available
+                if audio_features:
+                    cursor.execute("""
+                        UPDATE audio_features
+                        SET danceability = %s, energy = %s, key = %s, loudness = %s,
+                            mode = %s, speechiness = %s, acousticness = %s,
+                            instrumentalness = %s, liveness = %s, valence = %s,
+                            tempo = %s, duration_ms = %s, time_signature = %s
+                        WHERE track_id = %s
+                    """, (
+                        audio_features.get('danceability'),
+                        audio_features.get('energy'),
+                        audio_features.get('key'),
+                        audio_features.get('loudness'),
+                        audio_features.get('mode'),
+                        audio_features.get('speechiness'),
+                        audio_features.get('acousticness'),
+                        audio_features.get('instrumentalness'),
+                        audio_features.get('liveness'),
+                        audio_features.get('valence'),
+                        audio_features.get('tempo'),
+                        audio_features.get('duration_ms'),
+                        audio_features.get('time_signature'),
+                        track['track_id']
+                    ))
+
+                updated_count += 1
+
+            except Exception as e:
+                print(f"Error updating track {track['spotify_id']}: {e}")
+                continue
+
+        connection.commit()
+        return jsonify({"message": "Tracks updated successfully", "updated_count": updated_count})
+
+    except Exception as e:
+        if connection:
+            connection.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
 @app.route('/api/recommendations/<track_id>', methods=['GET'])
 def get_recommendations(track_id):
     connection = None
@@ -343,6 +516,139 @@ def get_recommendations(track_id):
         return jsonify({"recommendations": recommendations})
 
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+@app.route('/api/export-analysis', methods=['POST'])
+def export_analysis():
+    try:
+        data = request.get_json()
+        analysis_type = data.get('type')
+        analysis_data = data.get('data')
+
+        if not analysis_type or not analysis_data:
+            return jsonify({"error": "Missing analysis type or data"}), 400
+
+        connection = create_connection()
+        cursor = connection.cursor()
+
+        if analysis_type == 'track':
+            # Insert single track analysis
+            track_data = analysis_data
+
+            # Get or create artist
+            artist_id = get_or_create_artist(track_data['artists'][0]['name'], cursor)
+
+            # Get or create album
+            album_id = get_or_create_album(track_data['album']['name'], artist_id, cursor)
+
+            # Insert track
+            cursor.execute("""
+                INSERT INTO tracks (name, artist_id, album_id, popularity, duration_ms, spotify_id)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE popularity = VALUES(popularity)
+            """, (
+                track_data['name'],
+                artist_id,
+                album_id,
+                track_data['popularity'],
+                track_data['duration_ms'],
+                track_data['id']
+            ))
+
+            track_id = cursor.lastrowid or cursor.execute("SELECT track_id FROM tracks WHERE spotify_id = %s", (track_data['id'],)) or cursor.fetchone()[0]
+
+            # Insert audio features if available
+            if track_data.get('audio_features'):
+                audio_features = track_data['audio_features']
+                cursor.execute("""
+                    INSERT INTO audio_features
+                    (track_id, danceability, energy, key, loudness, mode, speechiness,
+                     acousticness, instrumentalness, liveness, valence, tempo, duration_ms,
+                     time_signature)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON DUPLICATE KEY UPDATE track_id = track_id
+                """, (
+                    track_id,
+                    audio_features.get('danceability'),
+                    audio_features.get('energy'),
+                    audio_features.get('key'),
+                    audio_features.get('loudness'),
+                    audio_features.get('mode'),
+                    audio_features.get('speechiness'),
+                    audio_features.get('acousticness'),
+                    audio_features.get('instrumentalness'),
+                    audio_features.get('liveness'),
+                    audio_features.get('valence'),
+                    audio_features.get('tempo'),
+                    audio_features.get('duration_ms'),
+                    audio_features.get('time_signature')
+                ))
+
+        elif analysis_type == 'playlist':
+            # Insert playlist tracks analysis
+            tracks_data = analysis_data.get('tracks', [])
+
+            for track_data in tracks_data:
+                # Get or create artist
+                artist_id = get_or_create_artist(track_data['artists'][0]['name'], cursor)
+
+                # Get or create album
+                album_id = get_or_create_album(track_data['album']['name'], artist_id, cursor)
+
+                # Insert track
+                cursor.execute("""
+                    INSERT INTO tracks (name, artist_id, album_id, popularity, duration_ms, spotify_id)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    ON DUPLICATE KEY UPDATE popularity = VALUES(popularity)
+                """, (
+                    track_data['name'],
+                    artist_id,
+                    album_id,
+                    track_data['popularity'],
+                    track_data['duration_ms'],
+                    track_data['id']
+                ))
+
+                track_id = cursor.lastrowid or cursor.execute("SELECT track_id FROM tracks WHERE spotify_id = %s", (track_data['id'],)) or cursor.fetchone()[0]
+
+                # Insert audio features if available
+                if track_data.get('audio_features'):
+                    audio_features = track_data['audio_features']
+                    cursor.execute("""
+                        INSERT INTO audio_features
+                        (track_id, danceability, energy, key, loudness, mode, speechiness,
+                         acousticness, instrumentalness, liveness, valence, tempo, duration_ms,
+                         time_signature)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON DUPLICATE KEY UPDATE track_id = track_id
+                    """, (
+                        track_id,
+                        audio_features.get('danceability'),
+                        audio_features.get('energy'),
+                        audio_features.get('key'),
+                        audio_features.get('loudness'),
+                        audio_features.get('mode'),
+                        audio_features.get('speechiness'),
+                        audio_features.get('acousticness'),
+                        audio_features.get('instrumentalness'),
+                        audio_features.get('liveness'),
+                        audio_features.get('valence'),
+                        audio_features.get('tempo'),
+                        audio_features.get('duration_ms'),
+                        audio_features.get('time_signature')
+                    ))
+
+        connection.commit()
+        return jsonify({"message": f"{analysis_type.capitalize()} analysis data exported successfully"}), 200
+
+    except Exception as e:
+        if connection:
+            connection.rollback()
         return jsonify({"error": str(e)}), 500
     finally:
         if cursor:

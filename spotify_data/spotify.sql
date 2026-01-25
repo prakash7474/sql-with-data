@@ -85,7 +85,7 @@ INSERT IGNORE INTO tracks (name, artist_id, album_id, popularity, duration_ms, s
 ('drivers license', (SELECT artist_id FROM artists WHERE name = 'Olivia Rodrigo'), (SELECT album_id FROM albums WHERE name = 'SOUR'), 84, 242014, '6habFhsOp2NvshLv26DqMb');
 
 -- Insert sample audio features
-INSERT IGNORE INTO audio_features (track_id, danceability, energy, key, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo, duration_ms, time_signature) VALUES
+INSERT IGNORE INTO audio_features (track_id, danceability, energy, `key`, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo, duration_ms, time_signature) VALUES
 ((SELECT track_id FROM tracks WHERE spotify_id = '4iV5W9uYEdYUVa79Axb7Rh'), 0.83, 0.65, 1, -3.18, 0, 0.08, 0.58, 0.00, 0.09, 0.93, 95.98, 233712, 4),
 ((SELECT track_id FROM tracks WHERE spotify_id = '0tgVpDi06FyKpA1z0VMD4v'), 0.60, 0.45, 8, -6.66, 1, 0.03, 0.16, 0.00, 0.11, 0.17, 95.05, 263400, 3),
 ((SELECT track_id FROM tracks WHERE spotify_id = '1Je1IMUlBXcx1Fz0WE7oPT'), 0.50, 0.41, 1, -5.68, 1, 0.03, 0.74, 0.00, 0.11, 0.45, 109.95, 182160, 4),

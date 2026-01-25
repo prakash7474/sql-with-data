@@ -12,7 +12,7 @@ sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
 # MySQL Database Connection
 db_config = {
     'host': 'localhost',           # Change to your MySQL host
-    'port': 3308,
+    'port': 3306,
     'user': 'root',       # Replace with your MySQL username
     'password': 'P@ssw0rd',   # Replace with your MySQL password
     'database': 'spotify_db'       # Replace with your database name

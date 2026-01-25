@@ -44,7 +44,11 @@ A full-stack web application for analyzing Spotify tracks and playlists with dat
    pip install -r requirements.txt
    ```
 
-2. Update Spotify credentials in `app.py`:
+2. **Get Spotify API Credentials:**
+   - Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+   - Create a new app or use existing one
+   - Copy the Client ID and Client Secret
+   - Update `app.py` with your credentials:
    ```python
    sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
        client_id='YOUR_CLIENT_ID',

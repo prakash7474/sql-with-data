@@ -8,7 +8,8 @@ def init_database():
             host='localhost',
             port=3306,
             user='root',
-            password='P@ssw0rd'
+            password='P@ssw0rd',
+            autocommit=True
         )
         cursor = connection.cursor()
 
@@ -16,23 +17,32 @@ def init_database():
         with open('spotify.sql', 'r', encoding='utf-8') as file:
             sql_content = file.read()
 
-        # Split SQL commands and execute them
-        sql_commands = sql_content.split(';')
+        # Split SQL commands properly and execute them
+        sql_commands = []
+        current_command = []
+        for line in sql_content.split('\n'):
+            line = line.strip()
+            if line and not line.startswith('--'):
+                current_command.append(line)
+                if line.endswith(';'):
+                    sql_commands.append(' '.join(current_command))
+                    current_command = []
+
         for command in sql_commands:
-            command = command.strip()
-            if command and not command.startswith('--'):
-                try:
-                    cursor.execute(command)
-                    print(f"Executed: {command[:50]}...")
-                except Exception as e:
-                    print(f"Error executing command: {e}")
-                    print(f"Command was: {command}")
+            try:
+                cursor.execute(command)
+                print(f"Executed: {command[:50]}...")
+            except Exception as e:
+                print(f"Error executing command: {e}")
+                print(f"Command was: {command}")
 
         connection.commit()
         print("Database initialized successfully!")
 
         # Verify data insertion
         cursor.execute("USE spotify_db")
+        connection.commit()  # Ensure USE statement is committed
+
         cursor.execute("SELECT COUNT(*) FROM tracks")
         track_count = cursor.fetchone()[0]
         print(f"Inserted {track_count} tracks")

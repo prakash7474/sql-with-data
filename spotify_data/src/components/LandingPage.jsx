@@ -1,13 +1,60 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 const LandingPage = ({ onAnalyzeTrack, onAnalyzePlaylist, loading }) => {
   const [url, setUrl] = useState('')
   const [analysisType, setAnalysisType] = useState('track')
+  const [urlError, setUrlError] = useState('')
+
+  // Automatically detect URL type and validate
+  useEffect(() => {
+    if (url.trim()) {
+      const detectedType = detectUrlType(url)
+      if (detectedType) {
+        setAnalysisType(detectedType)
+        setUrlError('')
+      } else {
+        setUrlError('Invalid Spotify URL. Please enter a valid Spotify track or playlist URL.')
+      }
+    } else {
+      setUrlError('')
+    }
+  }, [url])
+
+  const detectUrlType = (spotifyUrl) => {
+    if (!spotifyUrl.includes('spotify.com')) {
+      return null
+    }
+
+    if (spotifyUrl.includes('/track/')) {
+      return 'track'
+    } else if (spotifyUrl.includes('/playlist/')) {
+      return 'playlist'
+    }
+
+    return null
+  }
+
+  const validateUrl = (spotifyUrl) => {
+    const urlPattern = /^https:\/\/open\.spotify\.com\/(track|playlist)\/[a-zA-Z0-9]+/
+    return urlPattern.test(spotifyUrl)
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
+
+    if (analysisType === 'static') {
+      // For static data analysis, no URL validation needed
+      onAnalyzeTrack({ source: 'static' })
+      return
+    }
+
     if (!url.trim()) {
-      alert('Please enter a Spotify URL')
+      setUrlError('Please enter a Spotify URL')
+      return
+    }
+
+    if (!validateUrl(url)) {
+      setUrlError('Invalid Spotify URL format. Please check and try again.')
       return
     }
 
@@ -34,6 +81,7 @@ const LandingPage = ({ onAnalyzeTrack, onAnalyzePlaylist, loading }) => {
               onChange={(e) => setUrl(e.target.value)}
               disabled={loading}
             />
+            {urlError && <div className="error-message" style={{ color: 'red', fontSize: '14px', marginTop: '5px' }}>{urlError}</div>}
           </div>
 
           <div className="mb-3">
@@ -55,10 +103,19 @@ const LandingPage = ({ onAnalyzeTrack, onAnalyzePlaylist, loading }) => {
               />
               Analyze Playlist
             </label>
+            <label className="mb-2">
+              <input
+                type="radio"
+                value="static"
+                checked={analysisType === 'static'}
+                onChange={(e) => setAnalysisType(e.target.value)}
+              />
+              Analyze Static Data
+            </label>
           </div>
 
           <button type="submit" className="btn" disabled={loading}>
-            {loading ? 'Analyzing...' : `🎵 Analyze ${analysisType === 'track' ? 'Track' : 'Playlist'}`}
+            {loading ? 'Analyzing...' : `🎵 Analyze ${analysisType === 'track' ? 'Track' : analysisType === 'playlist' ? 'Playlist' : 'Static Data'}`}
           </button>
         </form>
 

@@ -1,6 +1,5 @@
 import mysql.connector
 
-# Check database connection and tracks count
 try:
     conn = mysql.connector.connect(
         host='localhost',
@@ -12,7 +11,11 @@ try:
     cursor = conn.cursor()
     cursor.execute('SELECT COUNT(*) FROM tracks')
     count = cursor.fetchone()[0]
-    print(f'Database connection successful - Tracks count: {count}')
+    print(f'Tracks count: {count}')
+    cursor.execute('SHOW TABLES')
+    tables = cursor.fetchall()
+    print(f'Tables: {tables}')
     conn.close()
+    print("Database test successful!")
 except Exception as e:
-    print(f'Database connection error: {e}')
+    print(f'Error: {e}')

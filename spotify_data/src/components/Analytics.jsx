@@ -4,10 +4,11 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement)
 
-const Analytics = ({ onBack }) => {
+const Analytics = ({ onBack, playlist }) => {
   const [stats, setStats] = useState(null)
   const [tracks, setTracks] = useState([])
   const [loading, setLoading] = useState(true)
+  const [exportLoading, setExportLoading] = useState(false)
 
   useEffect(() => {
     fetchAnalyticsData()
@@ -29,6 +30,108 @@ const Analytics = ({ onBack }) => {
       console.error('Error fetching analytics data:', error)
     }
     setLoading(false)
+  }
+
+  const handleNoteButton = async () => {
+    try {
+      // Update existing track data with latest information from Spotify
+      const response = await fetch('/api/update-tracks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        alert(`Data updated successfully! Updated ${result.updated_count} tracks.`)
+        // Refresh the analytics data
+        fetchAnalyticsData()
+      } else {
+        const error = await response.json()
+        alert(`Error: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Error updating data:', error)
+      alert('Error updating data')
+    }
+  }
+
+  const handleExportButton = () => {
+    if (!stats || tracks.length === 0) {
+      alert('No data available to export.')
+      return
+    }
+
+    // Prepare CSV data
+    const csvHeaders = ['Track Name', 'Artist', 'Album', 'Popularity', 'Duration (minutes)', 'Spotify ID']
+    const csvRows = tracks.map(track => [
+      track.name,
+      track.artist,
+      track.album,
+      track.popularity,
+      (track.duration_ms / 60000).toFixed(2),
+      track.spotify_id
+    ])
+
+    // Add summary stats as additional rows
+    csvRows.unshift(['Summary Stats', '', '', '', '', ''])
+    csvRows.unshift(['Total Tracks', stats.total_tracks, '', '', '', ''])
+    csvRows.unshift(['Total Artists', stats.total_artists, '', '', '', ''])
+    csvRows.unshift(['Total Albums', stats.total_albums, '', '', '', ''])
+    csvRows.unshift(['Average Popularity', stats.avg_popularity, '', '', '', ''])
+
+    // Create CSV content
+    const csvContent = [csvHeaders, ...csvRows].map(row => row.join(',')).join('\n')
+
+    // Create and download the file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', 'spotify_analysis_data.csv')
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    // Insert data into representative format (e.g., append to existing CSV)
+    const representativeData = csvContent
+    const existingData = localStorage.getItem('spotify_representative_data') || ''
+    const updatedData = existingData ? existingData + '\n\n' + representativeData : representativeData
+    localStorage.setItem('spotify_representative_data', updatedData)
+
+    alert('Data exported successfully and inserted into representative format!')
+  }
+
+  const handleExportPlaylist = async () => {
+    if (!playlist || !playlist.tracks || playlist.tracks.length === 0) {
+      alert('No playlist data available to export.')
+      return
+    }
+
+    setExportLoading(true)
+    try {
+      const response = await fetch('/api/export-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'playlist',
+          data: playlist.tracks
+        })
+      })
+
+      if (response.ok) {
+        alert('Playlist analysis data exported successfully!')
+      } else {
+        const error = await response.json()
+        alert(`Export failed: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Export error:', error)
+      alert('Export failed. Please try again.')
+    }
+    setExportLoading(false)
   }
 
   if (loading) return <div className="text-center">Loading analytics...</div>
@@ -92,6 +195,17 @@ const Analytics = ({ onBack }) => {
   return (
     <div className="analytics">
       <button className="btn btn-secondary mb-3" onClick={onBack}>← Back to Home</button>
+      <button className="btn btn-primary mb-3" onClick={handleNoteButton}>Note</button>
+      <button className="btn btn-success mb-3" onClick={handleExportButton}>Export Data</button>
+      {playlist && playlist.tracks && playlist.tracks.length > 0 && (
+        <button
+          className="btn btn-success mb-3"
+          onClick={handleExportPlaylist}
+          disabled={exportLoading}
+        >
+          {exportLoading ? 'Exporting...' : '💾 Export Playlist Analysis'}
+        </button>
+      )}
 
       <div className="card">
         <h2>Database Analytics</h2>

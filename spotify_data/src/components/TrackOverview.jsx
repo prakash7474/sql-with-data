@@ -1,11 +1,38 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Radar } from 'react-chartjs-2'
 import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend } from 'chart.js'
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend)
 
 const TrackOverview = ({ track, onBack }) => {
+  const [exportLoading, setExportLoading] = useState(false)
+
   if (!track) return <div>No track data available</div>
+
+  const handleExport = async () => {
+    setExportLoading(true)
+    try {
+      const response = await fetch('/api/export-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'track',
+          data: track
+        })
+      })
+
+      if (response.ok) {
+        alert('Track analysis data exported successfully!')
+      } else {
+        const error = await response.json()
+        alert(`Export failed: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Export error:', error)
+      alert('Export failed. Please try again.')
+    }
+    setExportLoading(false)
+  }
 
   const formatDuration = (ms) => {
     const minutes = Math.floor(ms / 60000)
@@ -57,6 +84,13 @@ const TrackOverview = ({ track, onBack }) => {
   return (
     <div className="track-overview">
       <button className="btn btn-secondary mb-3" onClick={onBack}>← Back to Home</button>
+      <button
+        className="btn btn-success mb-3"
+        onClick={handleExport}
+        disabled={exportLoading}
+      >
+        {exportLoading ? 'Exporting...' : '💾 Export Analysis'}
+      </button>
 
       <div className="card">
         <div className="grid">
