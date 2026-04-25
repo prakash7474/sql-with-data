@@ -13,8 +13,8 @@ CORS(app)
 # IMPORTANT: Replace these with your actual Spotify API credentials
 # Get them from: https://developer.spotify.com/dashboard
 sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
-    client_id='3ca6426adfa44b62a0b063b2f0c3ef9c',  # Replace with your Client ID
-    client_secret='625101c788c142b28e21d98025a9bd6a'  # Replace with your Client Secret
+    client_id='11f96fb384e44b92821fd86b7c9f2967',  # Replace with your Client ID
+    client_secret='5d0f71fd70964717ad4e99bd8aa21708'  # Replace with your Client Secret
 ))
 
 # MySQL Database Connection
